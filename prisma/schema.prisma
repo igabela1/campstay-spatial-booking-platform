@@ -1,0 +1,315 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String        @id @default(cuid())
+  name                 String?
+  email                String?       @unique
+  emailVerified        DateTime?
+  image                String?
+  password             String?
+  role                 Role          @default(GUEST)
+  status               UserStatus    @default(APPROVED)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  accounts             Account[]
+  bookmarks            Bookmark[]
+  camps                Camp[]
+  guestReviewsReceived GuestReview[] @relation("GuestReviewsReceived")
+  guestReviewsGiven    GuestReview[] @relation("GuestReviewsGiven")
+  listings             Listing[]
+  providerProfile      Provider?
+  reservations         Reservation[]
+  sessions             Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Provider {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  name               String
+  phone              String
+  address            String
+  isVerified         Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  businessIdentifier String?  @unique
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Camp {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  address     String
+  city        String
+
+  // Geographic center/location of the camp
+  lat         Float
+  lng         Float
+
+  // Image used for the internal visual camp layout
+  mapImageUrl String?
+
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner            User                  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  listings         Listing[]
+  pointsOfInterest CampPointOfInterest[]
+}
+
+model CampPointOfInterest {
+  id        String              @id @default(cuid())
+  name      String
+  type      PointOfInterestType
+  lat       Float
+  lng       Float
+  campId    String
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  camp Camp @relation(fields: [campId], references: [id], onDelete: Cascade)
+
+  @@unique([campId, type])
+  @@index([campId])
+  @@index([type])
+}
+
+model Listing {
+  id          String            @id @default(cuid())
+  title       String
+  description String
+  address     String
+  city        String
+
+  // Exact geographic location of this accommodation
+  lat         Float?
+  lng         Float?
+
+  price       Float
+  status      ListingStatus     @default(PENDING)
+  views       Int               @default(0)
+  providerId  String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  capacity    Int
+  isAvailable Boolean           @default(true)
+
+  // Position on internal camp layout image (0-100%)
+  mapX Float?
+  mapY Float?
+
+  type        AccommodationType
+  campId      String?
+  image       String?
+
+  // Automatically calculated geographic distances in meters
+  distanceToBeach   Int?
+  distanceToParking Int?
+  distanceToToilet  Int?
+
+  // Qualitative / decision-support spatial attributes
+  noiseLevel     Int?
+  recommendedFor UserType?
+  shadeLevel     Int?
+  spatialZone    SpatialZone?
+  terrainSlope   Int?
+
+  bookmarks    Bookmark[]
+  amenities    ListingAmenity[]
+  photos       Photo[]
+  reservations Reservation[]
+
+  camp     Camp? @relation(fields: [campId], references: [id], onDelete: SetNull)
+  provider User  @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([campId])
+  @@index([providerId])
+  @@index([status])
+  @@index([type])
+}
+
+model Amenity {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  icon      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  listings ListingAmenity[]
+}
+
+model ListingAmenity {
+  listingId String
+  amenityId String
+
+  amenity Amenity @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@id([listingId, amenityId])
+}
+
+model Photo {
+  id        String   @id @default(cuid())
+  listingId String
+  url       String
+  isCover   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([userId])
+}
+
+model Reservation {
+  id        String            @id @default(cuid())
+  userId    String
+  listingId String
+  checkIn   DateTime
+  checkOut  DateTime
+  guests    Int
+  status    ReservationStatus @default(PENDING)
+  note      String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  guestReview GuestReview?
+  listing     Listing      @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([listingId])
+  @@index([status])
+}
+
+model GuestReview {
+  id                  String   @id @default(cuid())
+  reservationId       String   @unique
+  guestId             String
+  providerId          String
+  cleanlinessRating   Int
+  rulesRating         Int
+  communicationRating Int
+  overallRating       Int
+  comment             String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  guest       User        @relation("GuestReviewsReceived", fields: [guestId], references: [id], onDelete: Cascade)
+  provider    User        @relation("GuestReviewsGiven", fields: [providerId], references: [id], onDelete: Cascade)
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@index([guestId])
+  @@index([providerId])
+}
+
+enum Role {
+  GUEST
+  PROVIDER
+  ADMIN
+}
+
+enum UserStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ListingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AccommodationType {
+  TENT_PITCH
+  CAMPER_PITCH
+  BUNGALOW
+  APARTMENT
+  POOL_COTTAGE
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum SpatialZone {
+  FAMILY
+  QUIET
+  ADVENTURE
+  BEACH
+  CENTRAL
+}
+
+enum UserType {
+  FAMILY
+  CAMPER
+  BACKPACKER
+  DIGITAL_NOMAD
+}
+
+enum PointOfInterestType {
+  BEACH
+  TOILET
+  PARKING
+}

@@ -1,0 +1,1 @@
+var e={OUTSIDE:-1,INTERSECTING:0,INSIDE:1};Object.freeze(e);var I=e;export{I as a};

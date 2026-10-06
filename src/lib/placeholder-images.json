@@ -1,0 +1,46 @@
+{
+  "placeholderImages": [
+    {
+      "id": "hero-1",
+      "description": "Beautiful lakeside camp and accommodation area.",
+      "imageUrl": "/images/camp-hero.jpg",
+      "imageHint": "lake camp"
+    },
+    {
+      "id": "accommodation-1",
+      "description": "Tent pitch in Auto Kamp Miris Ljeta.",
+      "imageUrl": "/images/tent-pitch.jpg",
+      "imageHint": "tent pitch"
+    },
+    {
+      "id": "accommodation-2",
+      "description": "Camper pitch near the lake.",
+      "imageUrl": "/images/camper-pitch.jpg",
+      "imageHint": "camper pitch"
+    },
+    {
+      "id": "accommodation-3",
+      "description": "Wooden bungalow accommodation.",
+      "imageUrl": "/images/bungalow.jpg",
+      "imageHint": "wooden bungalow"
+    },
+    {
+      "id": "accommodation-4",
+      "description": "Apartment accommodation for guests.",
+      "imageUrl": "/images/apartment.jpg",
+      "imageHint": "apartment"
+    },
+    {
+      "id": "pool-cottage",
+      "description": "Holiday house with private pool.",
+      "imageUrl": "/images/pool-cottage.jpg",
+      "imageHint": "pool cottage"
+    },
+    {
+      "id": "login-art",
+      "description": "Auto Kamp Miris Ljeta lake and nature atmosphere.",
+      "imageUrl": "/images/login-art.jpg",
+      "imageHint": "lake nature"
+    }
+  ]
+}
